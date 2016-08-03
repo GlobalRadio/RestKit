@@ -169,10 +169,11 @@ static NSString *const RKOperationLockName = @"org.restkit.operation.lock";
 
 - (void)setExecutionBlock:(void (^)(void))block
 {
+    __weak __typeof(self)weakSelf = self;
     TKState *executingState = [self.stateMachine stateNamed:RKOperationStateExecuting];
     [executingState setDidEnterStateBlock:^(TKState *state, TKStateMachine *stateMachine) {
-        [self.operation didChangeValueForKey:@"isExecuting"];
-        dispatch_async(self.dispatchQueue, ^{
+        [weakSelf.operation didChangeValueForKey:@"isExecuting"];
+        dispatch_async(weakSelf.dispatchQueue, ^{
             block();
         });
     }];
@@ -180,13 +181,14 @@ static NSString *const RKOperationLockName = @"org.restkit.operation.lock";
 
 - (void)setFinalizationBlock:(void (^)(void))block
 {
+    __weak __typeof(self)weakSelf = self;
     TKState *finishedState = [self.stateMachine stateNamed:RKOperationStateFinished];
     [finishedState setWillEnterStateBlock:^(TKState *state, TKStateMachine *stateMachine) {
-        [self.lock lock];
+        [weakSelf.lock lock];
         // Must emit KVO as we are replacing the block configured in `initWithOperation:queue:`
-        [self.operation willChangeValueForKey:@"isFinished"];
+        [weakSelf.operation willChangeValueForKey:@"isFinished"];
         block();
-        [self.lock unlock];
+        [weakSelf.lock unlock];
     }];
 }
 
